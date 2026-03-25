@@ -48,28 +48,46 @@ function PropertiesList() {
         {data.pages.map((page, i) => (
           <React.Fragment key={i}>
             {page.data.map((property) => (
-              <li key={property.id} style={{ border: '1px solid #eee', padding: '1rem', marginBottom: '1rem', borderRadius: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <h3 style={{ margin: '0 0 0.5rem 0' }}>{property.address}</h3>
-                  <p style={{ margin: 0, fontWeight: 'bold' }}>
-                    kr {property.price.toLocaleString('no-NO')}
-                  </p>
+              <li key={property.id} style={{ border: '1px solid #eee', marginBottom: '1.5rem', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', backgroundColor: '#fff' }}>
+                <img 
+                  src={property.imageUrl} 
+                  alt={property.address} 
+                  style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }} 
+                />
+                <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem' }}>{property.address}</h3>
+                    <p style={{ margin: '0 0 0.75rem 0', color: '#666', fontSize: '0.9rem' }}>
+                      {property.zipCode} {property.city}
+                    </p>
+                    <div style={{ display: 'flex', gap: '1rem', color: '#444', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                      <span>🛏️ {property.bedrooms} Beds</span>
+                      <span>🛁 {property.bathrooms} Baths</span>
+                      <span>📐 {property.squareMeters} m²</span>
+                      <span style={{ fontWeight: 'bold', color: property.energyGrade <= 'C' ? '#16a34a' : '#ea580c' }}>
+                        ⚡ {property.energyGrade}
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.4rem', color: '#111' }}>
+                      kr {property.price.toLocaleString('no-NO')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleSave(property)}
+                    disabled={isSaved(property.id) || isPending}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      cursor: isSaved(property.id) ? 'not-allowed' : 'pointer',
+                      backgroundColor: isSaved(property.id) ? '#eee' : '#0f172a',
+                      color: isSaved(property.id) ? '#666' : '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    {isSaved(property.id) ? 'Saved' : 'Save Property'}
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleSave(property)}
-                  disabled={isSaved(property.id) || isPending}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    cursor: isSaved(property.id) ? 'not-allowed' : 'pointer',
-                    backgroundColor: isSaved(property.id) ? '#eee' : '#0070f3',
-                    color: isSaved(property.id) ? '#666' : '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    height: '40px'
-                  }}
-                >
-                  {isSaved(property.id) ? 'Saved' : 'Save Property'}
-                </button>
               </li>
             ))}
           </React.Fragment>
@@ -80,9 +98,9 @@ function PropertiesList() {
         <button 
           onClick={() => fetchNextPage()} 
           disabled={isFetchingNextPage}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
+          style={{ padding: '0.75rem 2rem', cursor: 'pointer', borderRadius: '6px', border: '1px solid #ccc', backgroundColor: '#fff', fontSize: '1rem', fontWeight: '500', display: 'block', margin: '2rem auto' }}
         >
-          {isFetchingNextPage ? 'Loading more...' : 'Load More'}
+          {isFetchingNextPage ? 'Loading more...' : 'Load More Properties'}
         </button>
       )}
     </div>
