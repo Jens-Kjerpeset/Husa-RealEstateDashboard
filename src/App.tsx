@@ -52,7 +52,7 @@ function PropertiesList() {
                 <div>
                   <h3 style={{ margin: '0 0 0.5rem 0' }}>{property.address}</h3>
                   <p style={{ margin: 0, fontWeight: 'bold' }}>
-                    ${property.price.toLocaleString()}
+                    kr {property.price.toLocaleString('no-NO')}
                   </p>
                 </div>
                 <button

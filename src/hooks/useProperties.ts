@@ -25,11 +25,20 @@ const fetchProperties = async ({ pageParam = 0 }): Promise<FetchPropertiesRespon
   }
 
   const offset = pageParam * 10;
-  const mockData = Array.from({ length: 10 }).map((_, i) => ({
-    id: `prop-${offset + i}`,
-    address: `${offset + i + 1} Main St, Real Estate City`,
-    price: 300000 + (offset + i) * 10000,
-  }));
+  const norwegianStreets = ['Storgata', 'Kirkeveien', 'Karl Johans gate', 'Bogstadveien', 'Dronning Eufemias gate'];
+const norwegianCities = ['Oslo', 'Bergen', 'Trondheim', 'Stavanger', 'Kristiansand'];
+
+const allDummyData: Property[] = Array.from({ length: 100 }, (_, i) => {
+  const street = norwegianStreets[Math.floor(Math.random() * norwegianStreets.length)];
+  const city = norwegianCities[Math.floor(i / 20) % norwegianCities.length];
+  return {
+    id: `prop-${i}`,
+    address: `${street} ${Math.floor(Math.random() * 100) + 1}, ${city}`,
+    price: Math.floor(Math.random() * 15000000) + 3000000, // 3M to 18M NOK
+  };
+});
+
+  const mockData = allDummyData.slice(offset, offset + 10);
 
   return {
     data: mockData,
