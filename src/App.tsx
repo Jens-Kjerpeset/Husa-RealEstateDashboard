@@ -1,31 +1,57 @@
 import React, { Suspense, useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { SignedIn, SignedOut, UserButton, SignInButton, useAuth } from '@clerk/clerk-react';
+import { BrowserRouter, Routes, Route, Link as RouterLink } from 'react-router-dom';
+import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/clerk-react';
+import { 
+  AppShell, 
+  Container, 
+  Title, 
+  Text, 
+  Button, 
+  Group, 
+  Card, 
+  Image, 
+  Badge, 
+  Grid, 
+  Center,
+  Loader,
+  TextInput,
+  ActionIcon
+} from '@mantine/core';
+import { IconSearch, IconHeart, IconBuildingCommunity, IconBed, IconBath, IconMaximize } from '@tabler/icons-react';
+
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DataErrorBoundary } from './components/ui/DataErrorBoundary';
 import { useSuspenseProperties } from './hooks/useProperties';
 import type { Property } from './hooks/useProperties';
-import { PropertiesSkeleton } from './components/ui/PropertiesSkeleton';
 import { useDebounce } from './hooks/useDebounce';
 import { useSavedProperties, useSavePropertyMutation } from './hooks/useSavedProperties';
 import './App.css';
 
 function Home() {
   return (
-    <div className="home" style={{ padding: '2rem', textAlign: 'center' }}>
-      <h1>Real Estate Analytics Dashboard</h1>
-      <p>Please sign in to access the dashboard.</p>
-      <SignedOut>
-        <SignInButton mode="modal">
-          <button className="base-btn">Sign In</button>
-        </SignInButton>
-      </SignedOut>
-      <SignedIn>
-        <Link to="/dashboard">
-          <button className="base-btn">Go to Dashboard</button>
-        </Link>
-      </SignedIn>
-    </div>
+    <Center style={{ height: '100vh', backgroundColor: '#f8fafc' }}>
+      <Card shadow="md" p="xl" radius="md" withBorder style={{ textAlign: 'center', maxWidth: 500 }}>
+        <IconBuildingCommunity size={64} color="#4f46e5" stroke={1.5} style={{ margin: '0 auto' }} />
+        <Title order={1} mt="md" mb="xs" fw={800}>Real Estate Analytics Dashboard</Title>
+        <Text c="dimmed" mb="xl">
+          Secure, resilient, and blazing fast property insights. Please sign in to access your dashboard.
+        </Text>
+        
+        <SignedOut>
+          <SignInButton mode="modal">
+            <Button size="lg" fullWidth color="indigo">
+              Sign In
+            </Button>
+          </SignInButton>
+        </SignedOut>
+        
+        <SignedIn>
+          <Button component={RouterLink} to="/dashboard" size="lg" fullWidth color="indigo">
+            Go to Dashboard
+          </Button>
+        </SignedIn>
+      </Card>
+    </Center>
   );
 }
 
@@ -43,109 +69,149 @@ function PropertiesList() {
   };
 
   return (
-    <div>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
+    <>
+      <Grid gutter="xl">
         {data.pages.map((page, i) => (
           <React.Fragment key={i}>
             {page.data.map((property) => (
-              <li key={property.id} style={{ border: '1px solid #eee', marginBottom: '1.5rem', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', backgroundColor: '#fff' }}>
-                <img 
-                  src={property.imageUrl} 
-                  alt={property.address} 
-                  style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }} 
-                />
-                <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem' }}>{property.address}</h3>
-                    <p style={{ margin: '0 0 0.75rem 0', color: '#666', fontSize: '0.9rem' }}>
-                      {property.zipCode} {property.city}
-                    </p>
-                    <div style={{ display: 'flex', gap: '1rem', color: '#444', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                      <span>🛏️ {property.bedrooms} Beds</span>
-                      <span>🛁 {property.bathrooms} Baths</span>
-                      <span>📐 {property.squareMeters} m²</span>
-                      <span style={{ fontWeight: 'bold', color: property.energyGrade <= 'C' ? '#16a34a' : '#ea580c' }}>
-                        ⚡ {property.energyGrade}
-                      </span>
-                    </div>
-                    <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.4rem', color: '#111' }}>
+              <Grid.Col key={property.id} span={{ base: 12, sm: 6, lg: 4 }}>
+                <Card shadow="sm" padding="lg" radius="md" withBorder h="100%" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <Card.Section>
+                    <Image
+                      src={property.imageUrl}
+                      height={200}
+                      alt={property.address}
+                    />
+                  </Card.Section>
+
+                  <Group justify="space-between" mt="md" mb="xs">
+                    <Text fw={600} size="lg" lineClamp={1} style={{ flex: 1 }}>{property.address}</Text>
+                    <Badge color={property.energyGrade <= 'C' ? 'teal' : 'orange'} variant="light">
+                      Enova {property.energyGrade}
+                    </Badge>
+                  </Group>
+
+                  <Text c="dimmed" size="sm" mb="md">
+                    {property.zipCode} {property.city}
+                  </Text>
+
+                  <Group gap={15} mt="auto" mb="xl" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
+                    <Group gap={5}>
+                      <IconBed size={16} color="gray" />
+                      <Text size="sm" fw={500}>{property.bedrooms}</Text>
+                    </Group>
+                    <Group gap={5}>
+                      <IconBath size={16} color="gray" />
+                      <Text size="sm" fw={500}>{property.bathrooms}</Text>
+                    </Group>
+                    <Group gap={5}>
+                      <IconMaximize size={16} color="gray" />
+                      <Text size="sm" fw={500}>{property.squareMeters} m²</Text>
+                    </Group>
+                  </Group>
+
+                  <Group justify="space-between" align="center" mt="auto">
+                    <Text fw={800} size="xl" c="indigo">
                       kr {property.price.toLocaleString('no-NO')}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleSave(property)}
-                    disabled={isSaved(property.id) || isPending}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      cursor: isSaved(property.id) ? 'not-allowed' : 'pointer',
-                      backgroundColor: isSaved(property.id) ? '#eee' : '#0f172a',
-                      color: isSaved(property.id) ? '#666' : '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontWeight: '600'
-                    }}
-                  >
-                    {isSaved(property.id) ? 'Saved' : 'Save Property'}
-                  </button>
-                </div>
-              </li>
+                    </Text>
+                    
+                    <ActionIcon 
+                      variant={isSaved(property.id) ? "filled" : "light"} 
+                      color={isSaved(property.id) ? "gray" : "indigo"}
+                      size="lg"
+                      radius="md"
+                      onClick={() => handleSave(property)}
+                      disabled={isSaved(property.id) || isPending}
+                    >
+                      <IconHeart size={20} stroke={isSaved(property.id) ? 3 : 1.5} />
+                    </ActionIcon>
+                  </Group>
+                </Card>
+              </Grid.Col>
             ))}
           </React.Fragment>
         ))}
-      </ul>
+      </Grid>
       
       {hasNextPage && (
-        <button 
-          onClick={() => fetchNextPage()} 
-          disabled={isFetchingNextPage}
-          style={{ padding: '0.75rem 2rem', cursor: 'pointer', borderRadius: '6px', border: '1px solid #ccc', backgroundColor: '#fff', fontSize: '1rem', fontWeight: '500', display: 'block', margin: '2rem auto' }}
-        >
-          {isFetchingNextPage ? 'Loading more...' : 'Load More Properties'}
-        </button>
+        <Center mt={40}>
+          <Button 
+            variant="outline" 
+            color="indigo"
+            size="md"
+            onClick={() => fetchNextPage()} 
+            loading={isFetchingNextPage}
+          >
+            Load More Properties
+          </Button>
+        </Center>
       )}
-    </div>
+    </>
   );
 }
 
 function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 500);
-  const { userId } = useAuth();
   const { data: savedProps = [] } = useSavedProperties();
 
   return (
-    <div className="dashboard">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid #ccc' }}>
-        <h2>Dashboard</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <span>{savedProps.length} Saved Properties</span>
-          <UserButton />
-        </div>
-      </header>
-      <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-        <p>Welcome to your secure real estate dashboard! User ID: {userId}</p>
-        
-        <div style={{ marginBottom: '2rem' }}>
-          <label>
-            <strong>Search Properties: </strong>
-            <input 
-              type="text" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Start typing..."
-              style={{ padding: '0.5rem', width: '300px' }}
-            />
-          </label>
-          {debouncedSearch && <p style={{ color: 'gray', fontSize: '0.9rem' }}>Searching for: "{debouncedSearch}"</p>}
-        </div>
+    <AppShell
+      header={{ height: 70 }}
+      padding="md"
+      style={{ backgroundColor: '#f8fafc' }}
+    >
+      <AppShell.Header>
+        <Container size="xl" h="100%">
+          <Group justify="space-between" h="100%">
+            <Group>
+              <IconBuildingCommunity size={28} color="#4f46e5" />
+              <Title order={3} fw={700}>Husa Analytics</Title>
+            </Group>
+            
+            <Group gap="xl">
+              <Badge size="lg" variant="dot" color="indigo">
+                {savedProps.length} Saved Properties
+              </Badge>
+              <UserButton />
+            </Group>
+          </Group>
+        </Container>
+      </AppShell.Header>
 
-        <DataErrorBoundary>
-          <Suspense fallback={<PropertiesSkeleton />}>
-            <PropertiesList />
-          </Suspense>
-        </DataErrorBoundary>
-      </main>
-    </div>
+      <AppShell.Main>
+        <Container size="xl" py="xl">
+          <Group justify="space-between" align="flex-end" mb={40}>
+            <div>
+              <Title order={2} fw={800} mb="xs">Active Market Output</Title>
+              <Text c="dimmed">Analyzing properties across Norwegian databases.</Text>
+            </div>
+            
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              placeholder="Search by city or zip..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.currentTarget.value)}
+              size="md"
+              w={{ base: '100%', sm: 300 }}
+              radius="md"
+            />
+          </Group>
+
+          {debouncedSearch && (
+            <Text size="sm" c="dimmed" mb="lg">
+              Filtering properties matching: <strong>{debouncedSearch}</strong>
+            </Text>
+          )}
+
+          <DataErrorBoundary>
+            <Suspense fallback={<Center h={300}><Loader color="indigo" size="xl" type="bars" /></Center>}>
+              <PropertiesList />
+            </Suspense>
+          </DataErrorBoundary>
+        </Container>
+      </AppShell.Main>
+    </AppShell>
   );
 }
 
