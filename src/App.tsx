@@ -221,13 +221,13 @@ function Dashboard() {
     >
       <AppShell.Header>
         <Container size="xl" h="100%">
-          <Group justify="space-between" h="100%">
-            <Group>
+          <Group justify="space-between" h="100%" wrap="nowrap">
+            <Group gap="sm" wrap="nowrap">
               <IconBuildingCommunity size={28} color="#4f46e5" />
-              <Title order={3} fw={700}>Husa Analytics</Title>
+              <Title order={3} fw={700} visibleFrom="xs">Husa Analytics</Title>
             </Group>
             
-            <Group gap="xl">
+            <Group gap="sm" wrap="nowrap">
               <SignedIn>
                 <Button 
                   variant="light" 
@@ -235,15 +235,30 @@ function Dashboard() {
                   leftSection={<IconChartBar size={18} />}
                   onClick={openAnalytics}
                   radius="xl"
+                  visibleFrom="sm"
                 >
                   {savedProps.length} Saved Properties
+                </Button>
+                <Button 
+                  variant="light" 
+                  color="indigo" 
+                  onClick={openAnalytics}
+                  radius="xl"
+                  hiddenFrom="sm"
+                  px="xs"
+                >
+                  <IconChartBar size={18} style={{ marginRight: '4px' }} />
+                  {savedProps.length}
                 </Button>
                 <UserButton />
               </SignedIn>
               
               <SignedOut>
                 <SignInButton mode="modal">
-                  <Button variant="outline" color="indigo" radius="xl">Sign In to Save Properties</Button>
+                  <Button variant="outline" color="indigo" radius="xl" visibleFrom="sm">Sign In to Save Properties</Button>
+                </SignInButton>
+                <SignInButton mode="modal">
+                  <Button variant="outline" color="indigo" radius="xl" hiddenFrom="sm" size="sm">Sign In</Button>
                 </SignInButton>
               </SignedOut>
             </Group>
