@@ -71,3 +71,43 @@ export const useSavePropertyMutation = () => {
     },
   });
 };
+
+export const useRemovePropertyMutation = () => {
+  const { userId } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (propertyId: string) => {
+      if (!userId) throw new Error("Must be logged in to remove properties");
+      const docRef = doc(db, 'users', userId);
+      const queryKey = ['savedProperties', userId];
+      
+      let currentItems = queryClient.getQueryData<SavedPropertyRef[]>(queryKey);
+      if (!currentItems) {
+        const docSnap = await getDoc(docRef);
+        currentItems = docSnap.exists() ? docSnap.data().savedProperties || [] : [];
+      }
+      
+      const newItems = (currentItems || []).filter((item: SavedPropertyRef) => item.id !== propertyId);
+      await setDoc(docRef, { savedProperties: newItems }, { merge: true });
+      return propertyId;
+    },
+    onMutate: async (propertyId) => {
+      const queryKey = ['savedProperties', userId];
+      await queryClient.cancelQueries({ queryKey });
+      
+      const previousProperties = queryClient.getQueryData<SavedPropertyRef[]>(queryKey) || [];
+      queryClient.setQueryData<SavedPropertyRef[]>(queryKey, (old: SavedPropertyRef[] | undefined) => {
+        return old ? old.filter(item => item.id !== propertyId) : [];
+      });
+
+      return { previousProperties };
+    },
+    onError: (_err, _newProp, context) => {
+      queryClient.setQueryData(['savedProperties', userId], context?.previousProperties);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedProperties', userId] });
+    },
+  });
+};

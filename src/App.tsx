@@ -1,6 +1,6 @@
 import React, { Suspense, useState } from 'react';
-import { BrowserRouter, Routes, Route, Link as RouterLink } from 'react-router-dom';
-import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/clerk-react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { SignedIn, SignedOut, UserButton, SignInButton, useAuth, useClerk } from '@clerk/clerk-react';
 import { 
   AppShell, 
   Container, 
@@ -15,53 +15,97 @@ import {
   Center,
   Loader,
   TextInput,
-  ActionIcon
+  ActionIcon,
+  Drawer,
+  Stack
 } from '@mantine/core';
-import { IconSearch, IconHeart, IconBuildingCommunity, IconBed, IconBath, IconMaximize } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
+import { IconSearch, IconHeart, IconBuildingCommunity, IconBed, IconBath, IconMaximize, IconChartBar } from '@tabler/icons-react';
 
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
+
 import { DataErrorBoundary } from './components/ui/DataErrorBoundary';
-import { useSuspenseProperties } from './hooks/useProperties';
+import { useSuspenseProperties, usePropertiesByIds } from './hooks/useProperties';
 import type { Property } from './hooks/useProperties';
 import { useDebounce } from './hooks/useDebounce';
-import { useSavedProperties, useSavePropertyMutation } from './hooks/useSavedProperties';
+import { useSavedProperties, useSavePropertyMutation, useRemovePropertyMutation } from './hooks/useSavedProperties';
 import './App.css';
 
-function Home() {
+function PortfolioAnalytics({ ids }: { ids: string[] }) {
+  const { data: properties, isLoading, error } = usePropertiesByIds(ids);
+
+  if (ids.length === 0) {
+    return <Text c="dimmed" ta="center" mt="xl">No properties in your portfolio yet. Click the heart icons to build a portfolio!</Text>;
+  }
+
+  if (isLoading) return <Center mt="xl"><Loader color="indigo" /></Center>;
+  if (error || !properties) return <Text c="red">Failed to load portfolio data.</Text>;
+
+  // Aggregation Logic
+  const totalValue = properties.reduce((sum, p) => sum + p.price, 0);
+  const totalSqm = properties.reduce((sum, p) => sum + p.squareMeters, 0);
+  const avgSqmPrice = totalSqm > 0 ? totalValue / totalSqm : 0;
+  
+  const energyGrades = properties.reduce((acc, p) => {
+    acc[p.energyGrade] = (acc[p.energyGrade] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
-    <Center style={{ height: '100vh', backgroundColor: '#f8fafc' }}>
-      <Card shadow="md" p="xl" radius="md" withBorder style={{ textAlign: 'center', maxWidth: 500 }}>
-        <IconBuildingCommunity size={64} color="#4f46e5" stroke={1.5} style={{ margin: '0 auto' }} />
-        <Title order={1} mt="md" mb="xs" fw={800}>Real Estate Analytics Dashboard</Title>
-        <Text c="dimmed" mb="xl">
-          Secure, resilient, and blazing fast property insights. Please sign in to access your dashboard.
-        </Text>
-        
-        <SignedOut>
-          <SignInButton mode="modal">
-            <Button size="lg" fullWidth color="indigo">
-              Sign In
-            </Button>
-          </SignInButton>
-        </SignedOut>
-        
-        <SignedIn>
-          <Button component={RouterLink} to="/dashboard" size="lg" fullWidth color="indigo">
-            Go to Dashboard
-          </Button>
-        </SignedIn>
+    <Stack gap="xl" mt="md">
+      <Card withBorder radius="md" p="md" shadow="sm">
+        <Text size="xs" tt="uppercase" fw={700} c="dimmed">Estimated Portfolio Sum</Text>
+        <Text fz="h2" fw={800} c="indigo">kr {totalValue.toLocaleString('no-NO')}</Text>
+        <Text size="sm" c="dimmed" mt={4}>Across {properties.length} saved properties</Text>
       </Card>
-    </Center>
+
+      <Card withBorder radius="md" p="md" shadow="sm">
+        <Text size="xs" tt="uppercase" fw={700} c="dimmed">Average Market Rate</Text>
+        <Text fz="h2" fw={800} c="teal">kr {Math.round(avgSqmPrice).toLocaleString('no-NO')} / m²</Text>
+      </Card>
+
+      <div>
+        <Text size="sm" fw={700} mb="xs">Enova Efficiency Spread</Text>
+        <Stack gap="xs">
+          {Object.entries(energyGrades).sort().map(([grade, count]) => (
+            <Group justify="space-between" key={grade}>
+              <Badge color={grade <= 'C' ? 'teal' : 'orange'} variant="dot" size="lg">Grade {grade}</Badge>
+              <Text size="sm" fw={500}>{count} {(count === 1) ? 'property' : 'properties'}</Text>
+            </Group>
+          ))}
+        </Stack>
+      </div>
+    </Stack>
   );
 }
 
-function PropertiesList() {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useSuspenseProperties();
+function PropertiesList({ searchTerm }: { searchTerm: string }) {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useSuspenseProperties(searchTerm);
   const { data: savedProperties = [] } = useSavedProperties();
-  const { mutate, isPending } = useSavePropertyMutation();
+  const { mutate: saveProperty } = useSavePropertyMutation();
+  const { mutate: removeProperty } = useRemovePropertyMutation();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  
+  const { isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
 
-  const handleSave = (property: Property) => {
-    mutate(property);
+  // Market calculation
+  const allLoadedProperties = data.pages.flatMap(page => page.data);
+  const marketTotalVal = allLoadedProperties.reduce((sum, p) => sum + p.price, 0);
+  const marketTotalSqm = allLoadedProperties.reduce((sum, p) => sum + p.squareMeters, 0);
+  const marketAvgSqm = marketTotalSqm > 0 ? marketTotalVal / marketTotalSqm : 0;
+
+  const handleToggleSave = (property: Property) => {
+    if (!isSignedIn) {
+      openSignIn();
+      return;
+    }
+    setPendingId(property.id);
+    if (isSaved(property.id)) {
+      removeProperty(property.id, { onSettled: () => setPendingId(null) });
+    } else {
+      saveProperty(property, { onSettled: () => setPendingId(null) });
+    }
   };
 
   const isSaved = (propertyId: string) => {
@@ -73,7 +117,12 @@ function PropertiesList() {
       <Grid gutter="xl">
         {data.pages.map((page, i) => (
           <React.Fragment key={i}>
-            {page.data.map((property) => (
+            {page.data.map((property) => {
+              const propSqmPrice = property.squareMeters > 0 ? property.price / property.squareMeters : 0;
+              const diffPct = marketAvgSqm > 0 ? ((propSqmPrice - marketAvgSqm) / marketAvgSqm) * 100 : 0;
+              const isGoodDeal = diffPct < -5;
+
+              return (
               <Grid.Col key={property.id} span={{ base: 12, sm: 6, lg: 4 }}>
                 <Card shadow="sm" padding="lg" radius="md" withBorder h="100%" style={{ display: 'flex', flexDirection: 'column' }}>
                   <Card.Section>
@@ -110,25 +159,33 @@ function PropertiesList() {
                     </Group>
                   </Group>
 
-                  <Group justify="space-between" align="center" mt="auto">
-                    <Text fw={800} size="xl" c="indigo">
-                      kr {property.price.toLocaleString('no-NO')}
-                    </Text>
+                  <Group justify="space-between" align="flex-end" mt="auto">
+                    <div>
+                      <Text fw={800} size="xl" c="indigo">
+                        kr {property.price.toLocaleString('no-NO')}
+                      </Text>
+                      {isGoodDeal && (
+                        <Badge color="green" variant="light" size="xs" mt={4}>
+                          {Math.abs(diffPct).toFixed(0)}% Below Market Avg
+                        </Badge>
+                      )}
+                    </div>
                     
                     <ActionIcon 
                       variant={isSaved(property.id) ? "filled" : "light"} 
                       color={isSaved(property.id) ? "gray" : "indigo"}
                       size="lg"
                       radius="md"
-                      onClick={() => handleSave(property)}
-                      disabled={isSaved(property.id) || isPending}
+                      onClick={() => handleToggleSave(property)}
+                      disabled={pendingId === property.id}
                     >
                       <IconHeart size={20} stroke={isSaved(property.id) ? 3 : 1.5} />
                     </ActionIcon>
                   </Group>
                 </Card>
               </Grid.Col>
-            ))}
+            );
+            })}
           </React.Fragment>
         ))}
       </Grid>
@@ -154,6 +211,7 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 500);
   const { data: savedProps = [] } = useSavedProperties();
+  const [analyticsOpened, { open: openAnalytics, close: closeAnalytics }] = useDisclosure(false);
 
   return (
     <AppShell
@@ -170,10 +228,24 @@ function Dashboard() {
             </Group>
             
             <Group gap="xl">
-              <Badge size="lg" variant="dot" color="indigo">
-                {savedProps.length} Saved Properties
-              </Badge>
-              <UserButton />
+              <SignedIn>
+                <Button 
+                  variant="light" 
+                  color="indigo" 
+                  leftSection={<IconChartBar size={18} />}
+                  onClick={openAnalytics}
+                  radius="xl"
+                >
+                  {savedProps.length} Saved Properties
+                </Button>
+                <UserButton />
+              </SignedIn>
+              
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button variant="outline" color="indigo" radius="xl">Sign In to Save Properties</Button>
+                </SignInButton>
+              </SignedOut>
             </Group>
           </Group>
         </Container>
@@ -206,11 +278,21 @@ function Dashboard() {
 
           <DataErrorBoundary>
             <Suspense fallback={<Center h={300}><Loader color="indigo" size="xl" type="bars" /></Center>}>
-              <PropertiesList />
+              <PropertiesList searchTerm={debouncedSearch} />
             </Suspense>
           </DataErrorBoundary>
         </Container>
       </AppShell.Main>
+
+      <Drawer
+        opened={analyticsOpened}
+        onClose={closeAnalytics}
+        title={<Title order={3} fw={800}>Portfolio Analytics</Title>}
+        position="right"
+        size="md"
+      >
+        <PortfolioAnalytics ids={savedProps.map(p => p.id)} />
+      </Drawer>
     </AppShell>
   );
 }
@@ -219,15 +301,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/*" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );
