@@ -1,11 +1,13 @@
 import React, { Suspense, useState } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, UserButton, SignInButton, useAuth } from '@clerk/clerk-react';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DataErrorBoundary } from './components/ui/DataErrorBoundary';
 import { useSuspenseProperties } from './hooks/useProperties';
+import type { Property } from './hooks/useProperties';
 import { PropertiesSkeleton } from './components/ui/PropertiesSkeleton';
 import { useDebounce } from './hooks/useDebounce';
+import { useSavedProperties, useSavePropertyMutation } from './hooks/useSavedProperties';
 import './App.css';
 
 function Home() {
@@ -29,6 +31,16 @@ function Home() {
 
 function PropertiesList() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useSuspenseProperties();
+  const { data: savedProperties = [] } = useSavedProperties();
+  const { mutate, isPending } = useSavePropertyMutation();
+
+  const handleSave = (property: Property) => {
+    mutate(property);
+  };
+
+  const isSaved = (propertyId: string) => {
+    return savedProperties.some((p) => p.id === propertyId);
+  };
 
   return (
     <div>
@@ -36,11 +48,28 @@ function PropertiesList() {
         {data.pages.map((page, i) => (
           <React.Fragment key={i}>
             {page.data.map((property) => (
-              <li key={property.id} style={{ border: '1px solid #eee', padding: '1rem', marginBottom: '1rem', borderRadius: '4px' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0' }}>{property.address}</h3>
-                <p style={{ margin: 0, fontWeight: 'bold' }}>
-                  ${property.price.toLocaleString()}
-                </p>
+              <li key={property.id} style={{ border: '1px solid #eee', padding: '1rem', marginBottom: '1rem', borderRadius: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 0.5rem 0' }}>{property.address}</h3>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>
+                    ${property.price.toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleSave(property)}
+                  disabled={isSaved(property.id) || isPending}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    cursor: isSaved(property.id) ? 'not-allowed' : 'pointer',
+                    backgroundColor: isSaved(property.id) ? '#eee' : '#0070f3',
+                    color: isSaved(property.id) ? '#666' : '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    height: '40px'
+                  }}
+                >
+                  {isSaved(property.id) ? 'Saved' : 'Save Property'}
+                </button>
               </li>
             ))}
           </React.Fragment>
@@ -63,15 +92,20 @@ function PropertiesList() {
 function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 500);
+  const { userId } = useAuth();
+  const { data: savedProps = [] } = useSavedProperties();
 
   return (
     <div className="dashboard">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid #ccc' }}>
         <h2>Dashboard</h2>
-        <UserButton />
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <span>{savedProps.length} Saved Properties</span>
+          <UserButton />
+        </div>
       </header>
       <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-        <p>Welcome to your secure real estate dashboard!</p>
+        <p>Welcome to your secure real estate dashboard! User ID: {userId}</p>
         
         <div style={{ marginBottom: '2rem' }}>
           <label>
