@@ -53,13 +53,13 @@ function PortfolioAnalytics({ ids }: { ids: string[] }) {
 
   return (
     <Stack gap="xl" mt="md">
-      <Card withBorder radius="md" p="md" shadow="sm">
+      <Card bg="white" p="md" shadow="sm">
         <Text size="xs" tt="uppercase" fw={700} c="dimmed">Estimated Portfolio Sum</Text>
         <Text fz="h2" fw={800} c="indigo">kr {totalValue.toLocaleString('no-NO')}</Text>
         <Text size="sm" c="dimmed" mt={4}>Across {properties.length} saved properties</Text>
       </Card>
 
-      <Card withBorder radius="md" p="md" shadow="sm">
+      <Card bg="white" p="md" shadow="sm">
         <Text size="xs" tt="uppercase" fw={700} c="dimmed">Average Market Rate</Text>
         <Text fz="h2" fw={800} c="teal">kr {Math.round(avgSqmPrice).toLocaleString('no-NO')} / m²</Text>
       </Card>
@@ -124,7 +124,7 @@ function PropertiesList({ searchTerm }: { searchTerm: string }) {
 
               return (
               <Grid.Col key={property.id} span={{ base: 12, sm: 6, lg: 4 }}>
-                <Card shadow="sm" padding="lg" radius="md" withBorder h="100%" style={{ display: 'flex', flexDirection: 'column' }}>
+                <Card shadow="sm" padding="lg" bg="white" h="100%" style={{ display: 'flex', flexDirection: 'column' }}>
                   <Card.Section>
                     <Image
                       src={property.imageUrl}
@@ -144,7 +144,7 @@ function PropertiesList({ searchTerm }: { searchTerm: string }) {
                     {property.zipCode} {property.city}
                   </Text>
 
-                  <Group gap={15} mt="auto" mb="xl" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
+                  <Group gap={15} mt="auto" mb="xl" style={{ borderTop: '2px solid #f1f5f9', paddingTop: '15px' }}>
                     <Group gap={5}>
                       <IconBed size={16} color="gray" />
                       <Text size="sm" fw={500}>{property.bedrooms}</Text>
@@ -175,7 +175,6 @@ function PropertiesList({ searchTerm }: { searchTerm: string }) {
                       variant={isSaved(property.id) ? "filled" : "light"} 
                       color={isSaved(property.id) ? "gray" : "indigo"}
                       size="lg"
-                      radius="md"
                       onClick={() => handleToggleSave(property)}
                       disabled={pendingId === property.id}
                     >
@@ -234,7 +233,6 @@ function Dashboard() {
                   color="indigo" 
                   leftSection={<IconChartBar size={18} />}
                   onClick={openAnalytics}
-                  radius="xl"
                   visibleFrom="sm"
                 >
                   {savedProps.length} Saved Properties
@@ -243,7 +241,6 @@ function Dashboard() {
                   variant="light" 
                   color="indigo" 
                   onClick={openAnalytics}
-                  radius="xl"
                   hiddenFrom="sm"
                   px="xs"
                 >
@@ -255,10 +252,10 @@ function Dashboard() {
               
               <SignedOut>
                 <SignInButton mode="modal">
-                  <Button variant="outline" color="indigo" radius="xl" visibleFrom="sm">Sign In to Save Properties</Button>
+                  <Button variant="outline" color="indigo" visibleFrom="sm">Sign In to Save Properties</Button>
                 </SignInButton>
                 <SignInButton mode="modal">
-                  <Button variant="outline" color="indigo" radius="xl" hiddenFrom="sm" size="sm">Sign In</Button>
+                  <Button variant="outline" color="indigo" hiddenFrom="sm" size="sm">Sign In</Button>
                 </SignInButton>
               </SignedOut>
             </Group>
@@ -281,7 +278,6 @@ function Dashboard() {
               onChange={(e) => setSearchTerm(e.currentTarget.value)}
               size="md"
               w={{ base: '100%', sm: 300 }}
-              radius="md"
             />
           </Group>
 

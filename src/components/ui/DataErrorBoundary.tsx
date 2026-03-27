@@ -2,7 +2,6 @@ import React from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 import { ErrorBoundary } from 'react-error-boundary';
 
-// Granular error fallback. Instead of destroying the whole app, it only targets the single component that failed.
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <div role="alert" style={{ padding: '1rem', border: '1px solid red', borderRadius: '4px', background: '#ffe6e6', color: 'red' }}>

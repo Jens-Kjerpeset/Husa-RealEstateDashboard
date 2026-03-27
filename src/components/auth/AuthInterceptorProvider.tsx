@@ -6,7 +6,6 @@ export function AuthInterceptorProvider({ children }: { children: React.ReactNod
   const { getToken } = useAuth();
 
   useEffect(() => {
-    // Bind the dynamically rotating token to our Axios instance automatically
     setupApiInterceptors(() => getToken());
   }, [getToken]);
 
